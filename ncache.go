@@ -61,7 +61,7 @@ func NewLRU(size int) *LRU {
 }
 
 // Get implements the Cache interface.
-func (l *LRU) Get(_ context.Context, key string) (val interface{}, stale bool, ok bool) {
+func (l *LRU) Get(ctx context.Context, key string) (val interface{}, stale bool, ok bool) {
 	now := l.nowFunc().UnixNano()
 
 	l.mu.Lock()
@@ -86,8 +86,8 @@ func (l *LRU) Get(_ context.Context, key string) (val interface{}, stale bool, o
 	return le.val, le.stale(now), true
 }
 
-// Len returns the number of entries in the cache.
-func (l *LRU) Len() int {
+// Size returns the number of entries in the cache.
+func (l *LRU) Size() int {
 	l.mu.Lock()
 	s := l.entries.Len()
 	l.mu.Unlock()
@@ -95,7 +95,7 @@ func (l *LRU) Len() int {
 }
 
 // Set implements the Cache interface.
-func (l *LRU) Set(_ context.Context, key string, val interface{}, ttl time.Duration, stalePeriod time.Duration) error {
+func (l *LRU) Set(ctx context.Context, key string, val interface{}, ttl time.Duration, stalePeriod time.Duration) error {
 	var absExpireTime int64
 	if ttl > 0 {
 		absExpireTime = l.nowFunc().Add(ttl).UnixNano()

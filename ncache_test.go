@@ -110,10 +110,10 @@ func TestLRU(t *testing.T) {
 				t.Errorf("expected stale=%v, got stale=%v", test.ExpectStale, gotStale)
 			}
 
-			if test.ExpectOk && c.Len() != 1 {
-				t.Errorf("expected .Len()=%d, got .Len()=%d", 1, c.Len())
-			} else if !test.ExpectOk && c.Len() != 0 {
-				t.Errorf("expected .Len()=%d, got .Len()=%d", 0, c.Len())
+			if test.ExpectOk && c.Size() != 1 {
+				t.Errorf("expected .Size()=%d, got .Size()=%d", 1, c.Size())
+			} else if !test.ExpectOk && c.Size() != 0 {
+				t.Errorf("expected .Size()=%d, got .Size()=%d", 0, c.Size())
 			}
 		})
 	}

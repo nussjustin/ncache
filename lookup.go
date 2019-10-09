@@ -44,7 +44,7 @@ func NewLookupCache(store Cache, defaultOpts *LookupOpts) *LookupCache {
 //
 // The lookup behaviour can be configured using the opts parameter and is based on the LookupOpts given to NewCache.
 //
-// Callers should always check the returned error for nil instead of the value, since the cache value could be nil.
+// Callers should always check the returned error for nil instead of the value, since nil is a valid return value.
 func (c *LookupCache) GetSet(ctx context.Context, key string, lookup LookupFunc, opts *LookupOpts) (val interface{}, stale bool, err error) {
 	mopts := c.opts
 	if opts != nil {
