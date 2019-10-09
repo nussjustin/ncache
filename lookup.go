@@ -35,7 +35,7 @@ func NewLookupCache(store Cache, defaultOpts *LookupOpts) *LookupCache {
 	}
 	c.sf = newSfGroup(c)
 	if defaultOpts != nil {
-		c.opts = c.opts.Merge(*defaultOpts)
+		c.opts = c.opts.merge(*defaultOpts)
 	}
 	return c
 }
@@ -48,7 +48,7 @@ func NewLookupCache(store Cache, defaultOpts *LookupOpts) *LookupCache {
 func (c *LookupCache) GetSet(ctx context.Context, key string, lookup LookupFunc, opts *LookupOpts) (val interface{}, stale bool, err error) {
 	mopts := c.opts
 	if opts != nil {
-		mopts = mopts.Merge(*opts)
+		mopts = mopts.merge(*opts)
 	}
 
 	val, stale, ok := c.store.Get(ctx, key)
@@ -94,8 +94,8 @@ type LookupOpts struct {
 	TTL time.Duration
 }
 
-// Merge returns a new LookupOpts based on o and overriding all fields with the values from other when set there.
-func (o *LookupOpts) Merge(other LookupOpts) LookupOpts {
+// merge returns a new LookupOpts based on o and overriding all fields with the values from other when set there.
+func (o *LookupOpts) merge(other LookupOpts) LookupOpts {
 	if o == nil {
 		return other
 	}

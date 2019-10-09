@@ -488,7 +488,7 @@ func TestLookupOpts_Merge(t *testing.T) {
 	} {
 		test := test
 		t.Run(test.Name, func(t *testing.T) {
-			g := test.A.Merge(test.B)
+			g := test.A.merge(test.B)
 			if !reflect.DeepEqual(g, test.E) {
 				t.Errorf("result mismatch\n\texpected: %#v\n\t     got: %#v", test.E, g)
 			}
