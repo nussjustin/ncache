@@ -1,4 +1,4 @@
-# ncache [![GoDoc](https://godoc.org/github.com/nussjustin/ncache?status.svg)](https://godoc.org/github.com/nussjustin/ncache) [![Build Status](https://travis-ci.org/nussjustin/ncache.svg?branch=master)](https://travis-ci.org/nussjustin/ncache) [![Go Report Card](https://goreportcard.com/badge/github.com/nussjustin/ncache)](https://goreportcard.com/report/github.com/nussjustin/ncache)
+# ncache [![GoDoc](https://godoc.org/github.com/nussjustin/ncache?status.svg)](https://godoc.org/github.com/nussjustin/ncache) [![Build Status](https://travis-ci.com/nussjustin/ncache.svg?branch=master)](https://travis-ci.com/nussjustin/ncache) [![Go Report Card](https://goreportcard.com/badge/github.com/nussjustin/ncache)](https://goreportcard.com/report/github.com/nussjustin/ncache)
 
 Package ncache implements a simple LRU cache as well as a cache wrapper for populating caches that deduplicates lookups for the same cache key.
 
