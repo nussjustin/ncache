@@ -81,7 +81,7 @@ func TestLookupCache_GetSet(t *testing.T) {
 			InitialValue:       "hello",
 			InitialTTL:         1 * time.Microsecond,
 			InitialStalePeriod: 5 * time.Second,
-			InitialWait:        1 * time.Millisecond,
+			InitialWait:        5 * time.Millisecond,
 
 			LookupValue: "world",
 
@@ -99,7 +99,7 @@ func TestLookupCache_GetSet(t *testing.T) {
 			InitialValue:       "hello",
 			InitialTTL:         1 * time.Microsecond,
 			InitialStalePeriod: 5 * time.Second,
-			InitialWait:        1 * time.Millisecond,
+			InitialWait:        5 * time.Millisecond,
 
 			LookupValue: "world",
 
@@ -229,9 +229,7 @@ func TestLookupCache_GetSet(t *testing.T) {
 				t.Fatalf("failed to set initial value for key %q: %s", test.Name, err)
 			}
 
-			if test.InitialWait > 0 {
-				time.Sleep(test.InitialWait)
-			}
+			time.Sleep(test.InitialWait)
 
 			lc := NewLookupCache(c, nil)
 
@@ -248,11 +246,6 @@ func TestLookupCache_GetSet(t *testing.T) {
 
 			assertStaleState(t, test.ExpectStale, gotStale)
 			assertValue(t, test.ExpectedValue, gotValue)
-
-			// check underlying cache against reported results
-			lruValue, lruStale, _ := c.Get(context.Background(), test.Name)
-			assertStaleState(t, lruStale, gotStale)
-			assertValue(t, lruValue, gotValue)
 
 			var receiveTimeout time.Duration
 			if test.Opts != nil && test.Opts.RefreshMode == RefreshStale {
@@ -348,13 +341,13 @@ func TestLookupCache_GetSet_Dedupe(t *testing.T) {
 	var lookupCalled uint64
 
 	var wg sync.WaitGroup
-	for i := 0; i < 32; i++ {
+	for i := 0; i < 4; i++ {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
 			_, _, _ = lc.GetSet(context.Background(), "hello", func(context.Context, string) (interface{}, error) {
 				atomic.AddUint64(&lookupCalled, 1)
-				time.Sleep(25 * time.Microsecond)
+				time.Sleep(75 * time.Microsecond)
 				return "world", nil
 			}, nil)
 		}()
