@@ -366,6 +366,35 @@ func TestLookupCache_GetSet_Dedupe(t *testing.T) {
 	}
 }
 
+func TestLookupCache_GetSet_Expired(t *testing.T) {
+	lc := NewLookupCache(NewLRU(4), &LookupOpts{TTL: time.Millisecond})
+
+	var lookupCalled uint64
+	lookup := func(context.Context, string) (interface{}, error) {
+		lookupCalled++
+		return "world" + strconv.FormatUint(lookupCalled, 10), nil
+	}
+
+	val, stale, err := lc.GetSet(context.Background(), "hello", lookup, nil)
+	assertValue(t, "world1", val)
+	assertStaleState(t, false, stale)
+	assertNoError(t, err)
+
+	time.Sleep(time.Millisecond)
+
+	val, stale, err = lc.GetSet(context.Background(), "hello", lookup, nil)
+	assertValue(t, "world2", val)
+	assertStaleState(t, false, stale)
+	assertNoError(t, err)
+
+	time.Sleep(time.Millisecond)
+
+	val, stale, err = lc.GetSet(context.Background(), "hello", lookup, nil)
+	assertValue(t, "world3", val)
+	assertStaleState(t, false, stale)
+	assertNoError(t, err)
+}
+
 func BenchmarkLookupCache_GetSet(b *testing.B) {
 	b.Run("Dedup", func(b *testing.B) {
 		size := runtime.GOMAXPROCS(0)
