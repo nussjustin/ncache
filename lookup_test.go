@@ -177,7 +177,7 @@ func TestLookupCache_GetSet(t *testing.T) {
 
 			LookupPanicValue: "some panic",
 
-			ExpectedError: "panic while looking up key \"Lookup panic\": some panic",
+			ExpectedError: "some panic",
 
 			ExpectLookup: true,
 		},

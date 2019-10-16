@@ -18,65 +18,87 @@ func newSfGroup(c *LookupCache) *sfGroup {
 }
 
 func (sfg *sfGroup) do(ctx context.Context, key string, lookup LookupFunc, opts LookupOpts) (val interface{}, err error) {
-	// TODO(nussjustin): Check lock contention. Consider sharding if necessary. (Note: Go 1.14 adds bytes/hash)
+	// TODO(nussjustin): Check lock contention. Consider sharding if necessary. : Go 1.14 adds bytes/hash)
 	sfg.mu.Lock()
 	w, ok := sfg.m[key]
 	if !ok {
-		w = newSfWaiter(sfg.c)
-		w.do(key, lookup, opts)
+		w = newSfWaiter(sfg, key, lookup, opts)
+		w.do()
 		sfg.m[key] = w
 	}
 	sfg.mu.Unlock()
 	return w.wait(ctx)
 }
 
+func (sfg *sfGroup) forget(key string) {
+	sfg.mu.Lock()
+	delete(sfg.m, key)
+	sfg.mu.Unlock()
+}
+
 type sfWaiter struct {
-	c *LookupCache
+	sfg *sfGroup
+
+	key    string
+	lookup LookupFunc
+	opts   LookupOpts
 
 	ctx    context.Context
 	cancel func()
-
-	key string
 
 	mu  sync.Mutex
 	val interface{}
 	err error
 }
 
-func newSfWaiter(c *LookupCache) *sfWaiter {
-	return &sfWaiter{c: c}
+func newSfWaiter(sfg *sfGroup, key string, lookup LookupFunc, opts LookupOpts) *sfWaiter {
+	return &sfWaiter{sfg: sfg, key: key, lookup: lookup, opts: opts}
 }
 
-func (sfw *sfWaiter) do(key string, lookup LookupFunc, opts LookupOpts) {
-	sfw.ctx, sfw.cancel = context.WithTimeout(context.Background(), opts.Timeout)
-	sfw.key = key
+func errorFromPanic(v interface{}) error {
+	err, ok := v.(error)
+	if ok {
+		return err
+	}
+	return fmt.Errorf("%v", v)
+}
 
-	go func() {
-		sfw.mu.Lock()
-		defer sfw.mu.Unlock()
+func (sfw *sfWaiter) do() {
+	sfw.ctx, sfw.cancel = context.WithTimeout(context.Background(), sfw.opts.Timeout)
+	go sfw.doRun()
+}
 
-		defer sfw.cancel()
-		defer func() {
-			if v := recover(); v != nil {
-				err, ok := v.(error)
-				if !ok {
-					err = fmt.Errorf("panic while looking up key %q: %s", sfw.key, v)
-				}
-				sfw.val, sfw.err = nil, err
-			}
-
-			if sfw.err == nil {
-				// TODO(nussjustin): Report error
-				_ = sfw.c.store.Set(sfw.ctx, sfw.key, sfw.val, opts.TTL, opts.StaleFor)
-			}
-		}()
-
-		sfw.val, sfw.err = lookup(sfw.ctx, sfw.key)
+func (sfw *sfWaiter) doRun() {
+	defer func() {
 		if sfw.err != nil {
-			// we don't want to return both a value and an error **ever**
-			sfw.val = nil
+			return
 		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), sfw.opts.SetTimeout)
+		defer cancel()
+
+		_ = sfw.sfg.c.store.Set(ctx, sfw.key, sfw.val, sfw.opts.TTL, sfw.opts.StaleFor)
 	}()
+
+	var val interface{}
+	var err error
+	defer func() {
+		defer sfw.cancel()
+
+		if v := recover(); v != nil {
+			val, err = nil, errorFromPanic(v)
+		} else if err != nil {
+			val = nil
+		}
+
+		sfw.mu.Lock()
+		sfw.val, sfw.err = val, err
+		sfw.mu.Unlock()
+
+		sfw.sfg.forget(sfw.key)
+	}()
+
+	val, err = sfw.lookup(sfw.ctx, sfw.key)
 }
 
 func (sfw *sfWaiter) wait(ctx context.Context) (val interface{}, err error) {

@@ -23,12 +23,14 @@ type LookupCache struct {
 //
 //     LookupOpts{
 //         RefreshMode: RefreshExpired,
+//         SetTimeout:  10 * time.Second,
 //         Timeout:     10 * time.Second,
 //     }
 func NewLookupCache(store Cache, defaultOpts *LookupOpts) *LookupCache {
 	c := &LookupCache{
 		opts: LookupOpts{
 			RefreshMode: RefreshExpired,
+			SetTimeout:  10 * time.Second,
 			Timeout:     10 * time.Second,
 		},
 		store: store,
@@ -82,6 +84,9 @@ type LookupFunc func(ctx context.Context, key string) (val interface{}, err erro
 type LookupOpts struct {
 	// RefreshMode controls how stale values are refreshed.
 	RefreshMode RefreshMode
+
+	// SetTimeout is the timeout for saving looked up values in the underlying Cache.
+	SetTimeout time.Duration
 
 	// StaleFor sets an optional duration for which a value will be retained after it's TTL expired, in which the value
 	// can still be served.
