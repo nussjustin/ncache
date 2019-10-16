@@ -370,9 +370,10 @@ func TestLookupCache_GetSet_Expired(t *testing.T) {
 	lc := NewLookupCache(NewLRU(4), &LookupOpts{TTL: time.Millisecond})
 
 	var lookupCalled uint64
+	var lookupErr error
 	lookup := func(context.Context, string) (interface{}, error) {
 		lookupCalled++
-		return "world" + strconv.FormatUint(lookupCalled, 10), nil
+		return "world" + strconv.FormatUint(lookupCalled, 10), lookupErr
 	}
 
 	val, stale, err := lc.GetSet(context.Background(), "hello", lookup, nil)
@@ -389,8 +390,17 @@ func TestLookupCache_GetSet_Expired(t *testing.T) {
 
 	time.Sleep(time.Millisecond)
 
+	lookupErr = errors.New("some error")
+
 	val, stale, err = lc.GetSet(context.Background(), "hello", lookup, nil)
-	assertValue(t, "world3", val)
+	assertValue(t, nil, val)
+	assertStaleState(t, false, stale)
+	assertError(t, lookupErr.Error(), err)
+
+	lookupErr = nil
+
+	val, stale, err = lc.GetSet(context.Background(), "hello", lookup, nil)
+	assertValue(t, "world4", val)
 	assertStaleState(t, false, stale)
 	assertNoError(t, err)
 }
