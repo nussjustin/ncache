@@ -70,6 +70,8 @@ func (sfw *sfWaiter) do() {
 
 func (sfw *sfWaiter) doRun() {
 	defer func() {
+		defer sfw.sfg.forget(sfw.key)
+
 		if sfw.err != nil {
 			return
 		}
@@ -94,8 +96,6 @@ func (sfw *sfWaiter) doRun() {
 		sfw.mu.Lock()
 		sfw.val, sfw.err = val, err
 		sfw.mu.Unlock()
-
-		sfw.sfg.forget(sfw.key)
 	}()
 
 	val, err = sfw.lookup(sfw.ctx, sfw.key)
