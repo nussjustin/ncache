@@ -106,12 +106,12 @@ func (sfw *sfWaiter) wait(ctx context.Context) (val interface{}, err error) {
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	case <-sfw.ctx.Done():
-		if err := sfw.ctx.Err(); err != nil && err != context.Canceled {
-			return nil, sfw.ctx.Err()
-		}
 		sfw.mu.Lock()
 		val, err = sfw.val, sfw.err
 		sfw.mu.Unlock()
+		if err == nil && sfw.ctx.Err() != context.Canceled {
+			val, err = nil, sfw.ctx.Err()
+		}
 		return
 	}
 }
